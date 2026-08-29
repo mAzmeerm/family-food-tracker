@@ -118,7 +118,7 @@ export const Home: React.FC = () => {
             Family Food Tracker
           </h1>
           <p className="mt-2 text-orange-100 text-sm sm:text-base leading-relaxed">
-            Record every restaurant we've visited, pin their exact locations, and save honest ratings from Abang Amin, Aiman, Mak, Bapak, and the whole family.
+            Record every restaurant we've visited, pin their exact locations, and save honest ratings from the whole family.
           </p>
         </div>
 
