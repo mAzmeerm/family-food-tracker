@@ -1,0 +1,7 @@
+{
+  "name": "Family Food Tracker",
+  "description": "Personal family food journal to track visited restaurants, location maps, and family member reviews.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

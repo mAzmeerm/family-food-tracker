@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper to check authentication
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper functions for validating Restaurant data
+    function isValidRestaurant(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.latitude is number &&
+             data.longitude is number &&
+             (data.address == null || data.address is string) &&
+             (data.imageUrl == null || data.imageUrl is string);
+    }
+
+    // Helper functions for validating Review data
+    function isValidReview(data) {
+      return data.restaurantId is string && data.restaurantId.size() > 0 &&
+             data.memberId is string && data.memberId.size() > 0 &&
+             data.memberName is string && data.memberName.size() > 0 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.feedback is string;
+    }
+
+    // Helper functions for validating Family Member data
+    function isValidFamilyMember(data) {
+      return data.name is string && data.name.size() > 0;
+    }
+
+    // Restaurants collection
+    match /restaurants/{restaurantId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidRestaurant(request.resource.data);
+      allow update: if isAuthenticated() && isValidRestaurant(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidReview(request.resource.data);
+      allow update: if isAuthenticated() && isValidReview(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // Family Members collection
+    match /family_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidFamilyMember(request.resource.data);
+      allow update: if isAuthenticated() && isValidFamilyMember(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // Optional Visits collection if used
+    match /visits/{visitId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
