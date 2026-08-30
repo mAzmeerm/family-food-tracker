@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import { MapPin, Navigation, Loader2, AlertCircle, Check } from 'lucide-react';
-import { LocationCoordinates } from '../types';
-import { useGeolocation } from '../hooks/useGeolocation';
-import { reverseGeocode } from '../services/geocodingService';
+import React, { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import { MapPin, Navigation, Loader2, AlertCircle, Check } from "lucide-react";
+import { LocationCoordinates } from "../types";
+import { useGeolocation } from "../hooks/useGeolocation";
+import { reverseGeocode, searchAddress } from "../services/geocodingService";
 
 interface LocationPickerProps {
   initialLatitude?: number | null;
@@ -14,7 +14,7 @@ interface LocationPickerProps {
 
 const createPinIcon = () => {
   return L.divIcon({
-    className: 'custom-picker-marker',
+    className: "custom-picker-marker",
     html: `
       <div style="
         background: #f97316;
@@ -51,21 +51,31 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const markerRef = useRef<L.Marker | null>(null);
 
   // Default coordinates (Klang Valley / Malaysia fallback if none provided)
-  const defaultLat = initialLatitude || 3.1390;
+  const defaultLat = initialLatitude || 3.139;
   const defaultLng = initialLongitude || 101.6869;
 
-  const [selectedCoords, setSelectedCoords] = useState<LocationCoordinates | null>(
-    initialLatitude && initialLongitude
-      ? { latitude: initialLatitude, longitude: initialLongitude }
-      : null
-  );
+  const [selectedCoords, setSelectedCoords] =
+    useState<LocationCoordinates | null>(
+      initialLatitude && initialLongitude
+        ? { latitude: initialLatitude, longitude: initialLongitude }
+        : null,
+    );
   const [geocoding, setGeocoding] = useState<boolean>(false);
-  const [geocodedAddress, setGeocodedAddress] = useState<string | null>(initialAddress || null);
+  const [addressQuery, setAddressQuery] = useState(initialAddress || "");
+  const [searchingAddress, setSearchingAddress] = useState(false);
+  const [geocodedAddress, setGeocodedAddress] = useState<string | null>(
+    initialAddress || null,
+  );
   const [isLocationConfirmed, setIsLocationConfirmed] = useState<boolean>(
-    Boolean(initialLatitude && initialLongitude)
+    Boolean(initialLatitude && initialLongitude),
   );
 
-  const { getCurrentLocation, loading: geoLoading, error: geoError, clearLocationError } = useGeolocation();
+  const {
+    getCurrentLocation,
+    loading: geoLoading,
+    error: geoError,
+    clearLocationError,
+  } = useGeolocation();
 
   // Initialize map
   useEffect(() => {
@@ -78,8 +88,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         zoomControl: true,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
 
@@ -90,7 +101,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           draggable: true,
         }).addTo(map);
 
-        marker.on('dragend', async (e) => {
+        marker.on("dragend", async (e) => {
           const latLng = (e.target as L.Marker).getLatLng();
           handleLocationUpdate(latLng.lat, latLng.lng);
         });
@@ -99,7 +110,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       }
 
       // Click on map to place/move marker
-      map.on('click', (e: L.LeafletMouseEvent) => {
+      map.on("click", (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
         handleLocationUpdate(lat, lng);
       });
@@ -132,7 +143,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         draggable: true,
       }).addTo(map);
 
-      marker.on('dragend', async (e) => {
+      marker.on("dragend", async (e) => {
         const latLng = (e.target as L.Marker).getLatLng();
         handleLocationUpdate(latLng.lat, latLng.lng);
       });
@@ -153,9 +164,83 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         onLocationSelected(coords);
       }
     } catch (err) {
-      console.warn('Geocoding error:', err);
+      console.warn("Geocoding error:", err);
       onLocationSelected(coords);
     } finally {
+      setGeocoding(false);
+    }
+  };
+  const handleSearchAddress = async () => {
+    const query = addressQuery.trim();
+
+    if (!query) return;
+
+    setSearchingAddress(true);
+    setGeocoding(true);
+    clearLocationError();
+
+    try {
+      console.log("Searching address:", query);
+
+      const result = await searchAddress(query);
+
+      console.log("Search result:", result);
+
+      if (!result) {
+        setGeocodedAddress(null);
+        alert(
+          `Location not found.\n\nTry a more specific address, for example:\n"${query}, Malaysia"`,
+        );
+        return;
+      }
+
+      const coords: LocationCoordinates = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
+
+      setSelectedCoords(coords);
+      setGeocodedAddress(result.address);
+      setIsLocationConfirmed(false);
+
+      const map = mapInstanceRef.current;
+
+      if (!map) {
+        console.error("Leaflet map is not initialized.");
+        return;
+      }
+
+      // Move map to searched location
+      map.setView([result.latitude, result.longitude], 17, {
+        animate: true,
+      });
+
+      // Move existing marker
+      if (markerRef.current) {
+        markerRef.current.setLatLng([result.latitude, result.longitude]);
+      } else {
+        // Create marker if one doesn't exist
+        const marker = L.marker([result.latitude, result.longitude], {
+          icon: createPinIcon(),
+          draggable: true,
+        }).addTo(map);
+
+        marker.on("dragend", (e) => {
+          const latLng = (e.target as L.Marker).getLatLng();
+
+          handleLocationUpdate(latLng.lat, latLng.lng);
+        });
+
+        markerRef.current = marker;
+      }
+
+      onLocationSelected(coords, result.address);
+    } catch (error) {
+      console.error("Address search failed:", error);
+
+      alert("Unable to search this address. Please try again.");
+    } finally {
+      setSearchingAddress(false);
       setGeocoding(false);
     }
   };
@@ -171,7 +256,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       await handleLocationUpdate(coords.latitude, coords.longitude);
       setIsLocationConfirmed(true);
     } catch (err) {
-      console.warn('GPS location request failed:', err);
+      console.warn("GPS location request failed:", err);
     }
   };
 
@@ -184,6 +269,46 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
   return (
     <div className="space-y-3">
+      {/* Address Search */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <MapPin className="w-4 h-4" />
+          </div>
+
+          <input
+            id="location-address-search"
+            type="text"
+            value={addressQuery}
+            onChange={(e) => setAddressQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearchAddress();
+              }
+            }}
+            placeholder="Search restaurant address or place..."
+            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          />
+        </div>
+
+        <button
+          id="search-location-btn"
+          type="button"
+          onClick={handleSearchAddress}
+          disabled={searchingAddress || !addressQuery.trim()}
+          className="px-5 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+        >
+          {searchingAddress ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Searching...</span>
+            </>
+          ) : (
+            <span>Search Location</span>
+          )}
+        </button>
+      </div>
       {/* Controls row */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <button
@@ -198,7 +323,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           ) : (
             <Navigation className="w-4 h-4 text-orange-600" />
           )}
-          <span>{geoLoading ? 'Detecting GPS...' : '📍 Use Current Location'}</span>
+          <span>
+            {geoLoading ? "Detecting GPS..." : "📍 Use Current Location"}
+          </span>
         </button>
 
         <span className="text-xs text-gray-500 hidden sm:inline">
@@ -232,7 +359,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-semibold text-gray-900">
               <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-              <span>Selected: {selectedCoords.latitude.toFixed(5)}, {selectedCoords.longitude.toFixed(5)}</span>
+              <span>
+                Selected: {selectedCoords.latitude.toFixed(5)},{" "}
+                {selectedCoords.longitude.toFixed(5)}
+              </span>
             </div>
             {geocoding ? (
               <p className="text-xs text-gray-500 flex items-center gap-1.5">
@@ -252,8 +382,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             onClick={handleConfirmLocation}
             className={`px-4 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
               isLocationConfirmed
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-orange-500 hover:bg-orange-600 text-white shadow-xs'
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-orange-500 hover:bg-orange-600 text-white shadow-xs"
             }`}
           >
             {isLocationConfirmed ? (
