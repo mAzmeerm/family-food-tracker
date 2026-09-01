@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
   MapPin,
@@ -11,18 +11,28 @@ import {
   AlertCircle,
   MessageSquare,
   UtensilsCrossed,
-  Share2
-} from 'lucide-react';
-import { getRestaurantById, deleteRestaurant } from '../services/restaurantService';
-import { getReviewsForRestaurant, addReview, updateReview, deleteReview, calculateAverageRating } from '../services/reviewService';
-import { Restaurant, Review } from '../types';
-import { Rating } from '../components/Rating';
-import { ReviewCard } from '../components/ReviewCard';
-import { ReviewModal } from '../components/ReviewModal';
-import { RestaurantMap } from '../components/RestaurantMap';
-import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Loading } from '../components/Loading';
-import { getGoogleMapsUrl } from '../utils/helpers';
+  Share2,
+  Images,
+} from "lucide-react";
+import {
+  getRestaurantById,
+  deleteRestaurant,
+} from "../services/restaurantService";
+import {
+  getReviewsForRestaurant,
+  addReview,
+  updateReview,
+  deleteReview,
+  calculateAverageRating,
+} from "../services/reviewService";
+import { Restaurant, Review } from "../types";
+import { Rating } from "../components/Rating";
+import { ReviewCard } from "../components/ReviewCard";
+import { ReviewModal } from "../components/ReviewModal";
+import { RestaurantMap } from "../components/RestaurantMap";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { Loading } from "../components/Loading";
+import { getGoogleMapsUrl } from "../utils/helpers";
 
 export const RestaurantDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,7 +70,7 @@ export const RestaurantDetails: React.FC = () => {
       ]);
 
       if (!restData) {
-        setError('Restaurant not found.');
+        setError("Restaurant not found.");
         return;
       }
 
@@ -72,8 +82,8 @@ export const RestaurantDetails: React.FC = () => {
       });
       setReviews(reviewList);
     } catch (err: any) {
-      console.error('Error loading restaurant details:', err);
-      setError('Failed to load restaurant details.');
+      console.error("Error loading restaurant details:", err);
+      setError("Failed to load restaurant details.");
     } finally {
       setLoading(false);
     }
@@ -102,18 +112,22 @@ export const RestaurantDetails: React.FC = () => {
       // Update
       await updateReview(reviewToEdit.id, reviewData);
       const updatedReviews = reviews.map((r) =>
-        r.id === reviewToEdit.id ? { ...r, ...reviewData } : r
+        r.id === reviewToEdit.id ? { ...r, ...reviewData } : r,
       );
       setReviews(updatedReviews);
       const { average, count } = calculateAverageRating(updatedReviews);
-      setRestaurant((prev) => (prev ? { ...prev, averageRating: average, reviewCount: count } : null));
+      setRestaurant((prev) =>
+        prev ? { ...prev, averageRating: average, reviewCount: count } : null,
+      );
     } else {
       // Create
       const created = await addReview(reviewData);
       const updatedReviews = [created, ...reviews];
       setReviews(updatedReviews);
       const { average, count } = calculateAverageRating(updatedReviews);
-      setRestaurant((prev) => (prev ? { ...prev, averageRating: average, reviewCount: count } : null));
+      setRestaurant((prev) =>
+        prev ? { ...prev, averageRating: average, reviewCount: count } : null,
+      );
     }
   };
 
@@ -125,11 +139,13 @@ export const RestaurantDetails: React.FC = () => {
       const updatedReviews = reviews.filter((r) => r.id !== reviewToDelete.id);
       setReviews(updatedReviews);
       const { average, count } = calculateAverageRating(updatedReviews);
-      setRestaurant((prev) => (prev ? { ...prev, averageRating: average, reviewCount: count } : null));
+      setRestaurant((prev) =>
+        prev ? { ...prev, averageRating: average, reviewCount: count } : null,
+      );
       setReviewToDelete(null);
     } catch (err) {
-      console.error('Error deleting review:', err);
-      alert('Failed to delete review.');
+      console.error("Error deleting review:", err);
+      alert("Failed to delete review.");
     } finally {
       setIsDeletingReview(false);
     }
@@ -140,10 +156,10 @@ export const RestaurantDetails: React.FC = () => {
     setIsDeletingRestaurant(true);
     try {
       await deleteRestaurant(id);
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      console.error('Error deleting restaurant:', err);
-      alert('Failed to delete restaurant.');
+      console.error("Error deleting restaurant:", err);
+      alert("Failed to delete restaurant.");
       setIsDeletingRestaurant(false);
     }
   };
@@ -159,8 +175,12 @@ export const RestaurantDetails: React.FC = () => {
           <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-stone-900 mb-2 font-display">Restaurant Not Found</h2>
-          <p className="text-sm text-stone-500 mb-6">{error || 'This restaurant record does not exist.'}</p>
+          <h2 className="text-xl font-bold text-stone-900 mb-2 font-display">
+            Restaurant Not Found
+          </h2>
+          <p className="text-sm text-stone-500 mb-6">
+            {error || "This restaurant record does not exist."}
+          </p>
           <Link
             to="/"
             className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold inline-flex items-center gap-2"
@@ -173,8 +193,13 @@ export const RestaurantDetails: React.FC = () => {
     );
   }
 
-  const hasRating = restaurant.averageRating !== null && restaurant.averageRating !== undefined;
-  const googleMapsUrl = getGoogleMapsUrl(restaurant.latitude, restaurant.longitude, restaurant.name);
+  const hasRating =
+    restaurant.averageRating !== null && restaurant.averageRating !== undefined;
+  const googleMapsUrl = getGoogleMapsUrl(
+    restaurant.latitude,
+    restaurant.longitude,
+    restaurant.name,
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -213,18 +238,31 @@ export const RestaurantDetails: React.FC = () => {
 
       {/* Main Restaurant Info Card */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-xs mb-8">
-        {/* Optional Header Image */}
-        {restaurant.imageUrl && (
-          <div className="w-full h-56 sm:h-72 rounded-xl overflow-hidden mb-6 bg-gray-100">
-            <img
-              src={restaurant.imageUrl}
-              alt={restaurant.name}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+        {/* Restaurant Photos */}
+        {restaurant.photos && restaurant.photos.length > 0 && (
+          <div className="mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {restaurant.photos.map((photo, index) => (
+                <div
+                  key={`${photo}-${index}`}
+                  className={`rounded-xl overflow-hidden bg-gray-100 ${
+                    index === 0
+                      ? "col-span-2 sm:col-span-2 aspect-[16/9]"
+                      : "aspect-square"
+                  }`}
+                >
+                  <img
+                    src={photo}
+                    alt={`${restaurant.name} photo ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -255,10 +293,13 @@ export const RestaurantDetails: React.FC = () => {
                   <span className="text-3xl font-black text-gray-900">
                     {restaurant.averageRating?.toFixed(1)}
                   </span>
-                  <span className="text-sm font-semibold text-gray-400">/ 5</span>
+                  <span className="text-sm font-semibold text-gray-400">
+                    / 5
+                  </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1 font-medium">
-                  Based on {reviews.length} family {reviews.length === 1 ? 'review' : 'reviews'}
+                  Based on {reviews.length} family{" "}
+                  {reviews.length === 1 ? "review" : "reviews"}
                 </p>
               </div>
             ) : (
@@ -266,7 +307,9 @@ export const RestaurantDetails: React.FC = () => {
                 <span className="inline-block text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
                   No reviews yet
                 </span>
-                <p className="text-xs text-gray-400 mt-1">Be the first to rate!</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Be the first to rate!
+                </p>
               </div>
             )}
           </div>
@@ -330,7 +373,8 @@ export const RestaurantDetails: React.FC = () => {
               No family reviews yet
             </h3>
             <p className="text-xs text-gray-500 mb-5 max-w-sm mx-auto">
-              Add individual ratings and thoughts from family members for this food stop.
+              Add individual ratings and thoughts from family members for this
+              food stop.
             </p>
             <button
               id="empty-add-review-btn"
@@ -385,7 +429,7 @@ export const RestaurantDetails: React.FC = () => {
       <ConfirmDialog
         isOpen={Boolean(reviewToDelete)}
         title="Delete Review?"
-        message={`Are you sure you want to remove the review by ${reviewToDelete?.memberName || 'this family member'}?`}
+        message={`Are you sure you want to remove the review by ${reviewToDelete?.memberName || "this family member"}?`}
         confirmText="Delete Review"
         isDestructive={true}
         isLoading={isDeletingReview}

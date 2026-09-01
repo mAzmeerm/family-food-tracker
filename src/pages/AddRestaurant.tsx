@@ -1,22 +1,26 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Utensils, ArrowLeft, Image, MapPin, AlertCircle, Save, CheckCircle } from 'lucide-react';
-import { LocationPicker } from '../components/LocationPicker';
-import { addRestaurant } from '../services/restaurantService';
-import { LocationCoordinates } from '../types';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Utensils, ArrowLeft, MapPin, AlertCircle, Save } from "lucide-react";
+import { ImageUploader } from "../components/ImageUploader";
+import { LocationPicker } from "../components/LocationPicker";
+import { addRestaurant } from "../services/restaurantService";
+import { LocationCoordinates } from "../types";
 
 export const AddRestaurant: React.FC = () => {
   const navigate = useNavigate();
 
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [coords, setCoords] = useState<LocationCoordinates | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLocationSelected = (selectedCoords: LocationCoordinates, detectedAddress?: string) => {
+  const handleLocationSelected = (
+    selectedCoords: LocationCoordinates,
+    detectedAddress?: string,
+  ) => {
     setCoords(selectedCoords);
     if (detectedAddress && !address) {
       setAddress(detectedAddress);
@@ -27,12 +31,12 @@ export const AddRestaurant: React.FC = () => {
     e.preventDefault();
 
     if (!name.trim()) {
-      setError('Please enter the restaurant name.');
+      setError("Please enter the restaurant name.");
       return;
     }
 
     if (!coords || isNaN(coords.latitude) || isNaN(coords.longitude)) {
-      setError('Please select the restaurant location on the map or use GPS.');
+      setError("Please select the restaurant location on the map or use GPS.");
       return;
     }
 
@@ -45,12 +49,12 @@ export const AddRestaurant: React.FC = () => {
         latitude: coords.latitude,
         longitude: coords.longitude,
         address: address.trim() || null,
-        imageUrl: imageUrl.trim() || null,
+        photos,
       });
 
       navigate(`/restaurant/${created.id}`);
     } catch (err: any) {
-      setError(err.message || 'Failed to save restaurant. Please try again.');
+      setError(err.message || "Failed to save restaurant. Please try again.");
       setLoading(false);
     }
   };
@@ -75,8 +79,12 @@ export const AddRestaurant: React.FC = () => {
             <Utensils className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add Visited Restaurant</h1>
-            <p className="text-xs text-gray-500">Record a new food spot for the family journal</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Add Visited Restaurant
+            </h1>
+            <p className="text-xs text-gray-500">
+              Record a new food spot for the family journal
+            </p>
           </div>
         </div>
 
@@ -94,7 +102,8 @@ export const AddRestaurant: React.FC = () => {
               htmlFor="restaurant-name-input"
               className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2"
             >
-              Restaurant / Food Shop Name <span className="text-rose-500">*</span>
+              Restaurant / Food Shop Name{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <input
               id="restaurant-name-input"
@@ -112,9 +121,7 @@ export const AddRestaurant: React.FC = () => {
             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
               Restaurant Location <span className="text-rose-500">*</span>
             </label>
-            <LocationPicker
-              onLocationSelected={handleLocationSelected}
-            />
+            <LocationPicker onLocationSelected={handleLocationSelected} />
           </div>
 
           {/* Address input */}
@@ -141,26 +148,9 @@ export const AddRestaurant: React.FC = () => {
           </div>
 
           {/* Optional Image URL */}
+          {/* Restaurant Photos */}
           <div>
-            <label
-              htmlFor="restaurant-image-url-input"
-              className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2"
-            >
-              Photo URL (Optional)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <Image className="w-4 h-4" />
-              </div>
-              <input
-                id="restaurant-image-url-input"
-                type="url"
-                placeholder="https://example.com/photo.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              />
-            </div>
+            <ImageUploader onImagesUploaded={setPhotos} maxImages={6} />
           </div>
 
           {/* Action buttons */}
@@ -179,7 +169,9 @@ export const AddRestaurant: React.FC = () => {
               className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:opacity-50 text-white font-medium rounded-xl text-sm shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
             >
               <Save className="w-4 h-4" />
-              <span>{loading ? 'Saving Restaurant...' : 'Save Restaurant'}</span>
+              <span>
+                {loading ? "Saving Restaurant..." : "Save Restaurant"}
+              </span>
             </button>
           </div>
         </form>

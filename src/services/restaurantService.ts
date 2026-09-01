@@ -9,13 +9,13 @@ import {
   query,
   where,
   serverTimestamp,
-  writeBatch
-} from 'firebase/firestore';
-import { db } from './firebase';
-import { Restaurant } from '../types';
-import { getAllReviews, calculateAverageRating } from './reviewService';
+  writeBatch,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { Restaurant } from "../types";
+import { getAllReviews, calculateAverageRating } from "./reviewService";
 
-const COLLECTION_NAME = 'restaurants';
+const COLLECTION_NAME = "restaurants";
 
 export const getRestaurants = async (): Promise<Restaurant[]> => {
   try {
@@ -40,11 +40,12 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
 
       restaurants.push({
         id: docSnap.id,
-        name: data.name || 'Unnamed Restaurant',
+        name: data.name || "Unnamed Restaurant",
         latitude: Number(data.latitude),
         longitude: Number(data.longitude),
         address: data.address || null,
         imageUrl: data.imageUrl || null,
+        photos: Array.isArray(data.photos) ? data.photos : [],
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         averageRating: average,
@@ -54,19 +55,29 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
 
     // Default sort by newest
     restaurants.sort((a, b) => {
-      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
-      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+      const timeA = a.createdAt?.toMillis
+        ? a.createdAt.toMillis()
+        : a.createdAt?.seconds
+          ? a.createdAt.seconds * 1000
+          : 0;
+      const timeB = b.createdAt?.toMillis
+        ? b.createdAt.toMillis()
+        : b.createdAt?.seconds
+          ? b.createdAt.seconds * 1000
+          : 0;
       return timeB - timeA;
     });
 
     return restaurants;
   } catch (error) {
-    console.error('Error fetching restaurants:', error);
+    console.error("Error fetching restaurants:", error);
     throw error;
   }
 };
 
-export const getRestaurantById = async (id: string): Promise<Restaurant | null> => {
+export const getRestaurantById = async (
+  id: string,
+): Promise<Restaurant | null> => {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
@@ -83,6 +94,7 @@ export const getRestaurantById = async (id: string): Promise<Restaurant | null> 
       longitude: Number(data.longitude),
       address: data.address || null,
       imageUrl: data.imageUrl || null,
+      photos: Array.isArray(data.photos) ? data.photos : [],
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };
@@ -93,11 +105,14 @@ export const getRestaurantById = async (id: string): Promise<Restaurant | null> 
 };
 
 export const addRestaurant = async (
-  restaurantData: Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt' | 'averageRating' | 'reviewCount'>
+  restaurantData: Omit<
+    Restaurant,
+    "id" | "createdAt" | "updatedAt" | "averageRating" | "reviewCount"
+  >,
 ): Promise<Restaurant> => {
   try {
     if (!restaurantData.name || !restaurantData.name.trim()) {
-      throw new Error('Restaurant name is required.');
+      throw new Error("Restaurant name is required.");
     }
     if (
       restaurantData.latitude === undefined ||
@@ -107,7 +122,9 @@ export const addRestaurant = async (
       restaurantData.longitude === null ||
       isNaN(restaurantData.longitude)
     ) {
-      throw new Error('Valid location coordinates (latitude and longitude) are required.');
+      throw new Error(
+        "Valid location coordinates (latitude and longitude) are required.",
+      );
     }
 
     const newDoc = {
@@ -116,6 +133,7 @@ export const addRestaurant = async (
       longitude: Number(restaurantData.longitude),
       address: restaurantData.address ? restaurantData.address.trim() : null,
       imageUrl: restaurantData.imageUrl ? restaurantData.imageUrl.trim() : null,
+      photos: Array.isArray(restaurantData.photos) ? restaurantData.photos : [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -129,14 +147,14 @@ export const addRestaurant = async (
       reviewCount: 0,
     };
   } catch (error) {
-    console.error('Error adding restaurant:', error);
+    console.error("Error adding restaurant:", error);
     throw error;
   }
 };
 
 export const updateRestaurant = async (
   id: string,
-  restaurantData: Partial<Omit<Restaurant, 'id' | 'createdAt'>>
+  restaurantData: Partial<Omit<Restaurant, "id" | "createdAt">>,
 ): Promise<void> => {
   try {
     const updatePayload: Record<string, any> = {
@@ -144,30 +162,46 @@ export const updateRestaurant = async (
     };
 
     if (restaurantData.name !== undefined) {
-      if (!restaurantData.name.trim()) throw new Error('Restaurant name cannot be empty.');
+      if (!restaurantData.name.trim())
+        throw new Error("Restaurant name cannot be empty.");
       updatePayload.name = restaurantData.name.trim();
     }
 
-    if (restaurantData.latitude !== undefined && restaurantData.longitude !== undefined) {
-      if (isNaN(Number(restaurantData.latitude)) || isNaN(Number(restaurantData.longitude))) {
-        throw new Error('Coordinates must be numeric.');
+    if (
+      restaurantData.latitude !== undefined &&
+      restaurantData.longitude !== undefined
+    ) {
+      if (
+        isNaN(Number(restaurantData.latitude)) ||
+        isNaN(Number(restaurantData.longitude))
+      ) {
+        throw new Error("Coordinates must be numeric.");
       }
       updatePayload.latitude = Number(restaurantData.latitude);
       updatePayload.longitude = Number(restaurantData.longitude);
     }
 
     if (restaurantData.address !== undefined) {
-      updatePayload.address = restaurantData.address ? restaurantData.address.trim() : null;
+      updatePayload.address = restaurantData.address
+        ? restaurantData.address.trim()
+        : null;
     }
 
     if (restaurantData.imageUrl !== undefined) {
-      updatePayload.imageUrl = restaurantData.imageUrl ? restaurantData.imageUrl.trim() : null;
+      updatePayload.imageUrl = restaurantData.imageUrl
+        ? restaurantData.imageUrl.trim()
+        : null;
+    }
+    if (restaurantData.photos !== undefined) {
+      updatePayload.photos = Array.isArray(restaurantData.photos)
+        ? restaurantData.photos
+        : [];
     }
 
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, updatePayload);
   } catch (error) {
-    console.error('Error updating restaurant:', error);
+    console.error("Error updating restaurant:", error);
     throw error;
   }
 };
@@ -175,7 +209,10 @@ export const updateRestaurant = async (
 export const deleteRestaurant = async (id: string): Promise<void> => {
   try {
     // 1. Find all reviews associated with this restaurant
-    const reviewsQuery = query(collection(db, 'reviews'), where('restaurantId', '==', id));
+    const reviewsQuery = query(
+      collection(db, "reviews"),
+      where("restaurantId", "==", id),
+    );
     const reviewsSnapshot = await getDocs(reviewsQuery);
 
     const batch = writeBatch(db);
@@ -192,7 +229,7 @@ export const deleteRestaurant = async (id: string): Promise<void> => {
     // Commit batch
     await batch.commit();
   } catch (error) {
-    console.error('Error deleting restaurant and reviews:', error);
+    console.error("Error deleting restaurant and reviews:", error);
     throw error;
   }
 };

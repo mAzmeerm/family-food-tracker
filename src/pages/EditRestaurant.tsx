@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Utensils, ArrowLeft, Image, MapPin, AlertCircle, Save } from 'lucide-react';
-import { LocationPicker } from '../components/LocationPicker';
-import { getRestaurantById, updateRestaurant } from '../services/restaurantService';
-import { LocationCoordinates, Restaurant } from '../types';
-import { Loading } from '../components/Loading';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { Utensils, ArrowLeft, MapPin, AlertCircle, Save } from "lucide-react";
+import { ImageUploader } from "../components/ImageUploader";
+import { LocationPicker } from "../components/LocationPicker";
+import {
+  getRestaurantById,
+  updateRestaurant,
+} from "../services/restaurantService";
+import { LocationCoordinates, Restaurant } from "../types";
+import { Loading } from "../components/Loading";
 
 export const EditRestaurant: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [coords, setCoords] = useState<LocationCoordinates | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -31,22 +35,25 @@ export const EditRestaurant: React.FC = () => {
     try {
       const data = await getRestaurantById(restaurantId);
       if (!data) {
-        setError('Restaurant not found.');
+        setError("Restaurant not found.");
         return;
       }
       setRestaurant(data);
       setName(data.name);
-      setAddress(data.address || '');
-      setImageUrl(data.imageUrl || '');
+      setAddress(data.address || "");
+      setPhotos(data.photos || []);
       setCoords({ latitude: data.latitude, longitude: data.longitude });
     } catch (err: any) {
-      setError('Failed to load restaurant details.');
+      setError("Failed to load restaurant details.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLocationSelected = (selectedCoords: LocationCoordinates, detectedAddress?: string) => {
+  const handleLocationSelected = (
+    selectedCoords: LocationCoordinates,
+    detectedAddress?: string,
+  ) => {
     setCoords(selectedCoords);
     if (detectedAddress && !address) {
       setAddress(detectedAddress);
@@ -58,12 +65,12 @@ export const EditRestaurant: React.FC = () => {
     if (!id) return;
 
     if (!name.trim()) {
-      setError('Please enter the restaurant name.');
+      setError("Please enter the restaurant name.");
       return;
     }
 
     if (!coords || isNaN(coords.latitude) || isNaN(coords.longitude)) {
-      setError('Please select valid location coordinates.');
+      setError("Please select valid location coordinates.");
       return;
     }
 
@@ -76,12 +83,12 @@ export const EditRestaurant: React.FC = () => {
         latitude: coords.latitude,
         longitude: coords.longitude,
         address: address.trim() || null,
-        imageUrl: imageUrl.trim() || null,
+        photos,
       });
 
       navigate(`/restaurant/${id}`);
     } catch (err: any) {
-      setError(err.message || 'Failed to update restaurant.');
+      setError(err.message || "Failed to update restaurant.");
       setSaving(false);
     }
   };
@@ -126,8 +133,12 @@ export const EditRestaurant: React.FC = () => {
             <Utensils className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Edit Restaurant</h1>
-            <p className="text-xs text-gray-500">Update restaurant details or adjust location pin</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Edit Restaurant
+            </h1>
+            <p className="text-xs text-gray-500">
+              Update restaurant details or adjust location pin
+            </p>
           </div>
         </div>
 
@@ -194,26 +205,13 @@ export const EditRestaurant: React.FC = () => {
             </div>
           </div>
 
-          {/* Optional Image URL */}
+          {/* Restaurant Photos */}
           <div>
-            <label
-              htmlFor="edit-restaurant-image-input"
-              className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2"
-            >
-              Photo URL
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <Image className="w-4 h-4" />
-              </div>
-              <input
-                id="edit-restaurant-image-input"
-                type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              />
-            </div>
+            <ImageUploader
+              existingImages={photos}
+              onImagesUploaded={setPhotos}
+              maxImages={6}
+            />
           </div>
 
           {/* Action buttons */}
@@ -232,7 +230,7 @@ export const EditRestaurant: React.FC = () => {
               className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:opacity-50 text-white font-medium rounded-xl text-sm shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? 'Saving Changes...' : 'Save Changes'}</span>
+              <span>{saving ? "Saving Changes..." : "Save Changes"}</span>
             </button>
           </div>
         </form>

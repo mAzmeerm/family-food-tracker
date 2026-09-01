@@ -10,9 +10,13 @@ export interface Restaurant {
   latitude: number;
   longitude: number;
   address: string | null;
+
   imageUrl?: string | null;
+  photos?: string[];
+
   createdAt?: any;
   updatedAt?: any;
+
   // Computed values
   averageRating?: number | null;
   reviewCount?: number;
@@ -29,7 +33,12 @@ export interface Review {
   updatedAt?: any;
 }
 
-export type SortOption = 'newest' | 'oldest' | 'highest_rating' | 'lowest_rating' | 'name';
+export type SortOption =
+  | "newest"
+  | "oldest"
+  | "highest_rating"
+  | "lowest_rating"
+  | "name";
 
 export interface LocationCoordinates {
   latitude: number;

@@ -1,14 +1,23 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Star, MessageSquare, UtensilsCrossed, ChevronRight } from 'lucide-react';
-import { Restaurant } from '../types';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  MapPin,
+  Star,
+  MessageSquare,
+  UtensilsCrossed,
+  ChevronRight,
+} from "lucide-react";
+import { Restaurant } from "../types";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
 }
 
-export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) => {
-  const hasRating = restaurant.averageRating !== null && restaurant.averageRating !== undefined;
+export const RestaurantCard: React.FC<RestaurantCardProps> = ({
+  restaurant,
+}) => {
+  const hasRating =
+    restaurant.averageRating !== null && restaurant.averageRating !== undefined;
 
   return (
     <Link
@@ -17,16 +26,15 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) =>
       className="group block bg-white rounded-2xl p-5 border border-gray-200 shadow-xs hover:shadow-md hover:border-orange-300 transition-all duration-200 flex flex-col justify-between"
     >
       <div>
-        {/* Optional Image */}
-        {restaurant.imageUrl ? (
+        {/* Restaurant Image */}
+        {restaurant.photos?.[0] ? (
           <div className="w-full h-40 rounded-xl overflow-hidden mb-4 bg-gray-100 relative">
             <img
-              src={restaurant.imageUrl}
+              src={restaurant.photos[0]}
               alt={restaurant.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              referrerPolicy="no-referrer"
               onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           </div>
@@ -63,7 +71,8 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) =>
         <div className="mt-4 flex items-start gap-2 text-gray-500 text-xs leading-relaxed">
           <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
           <span className="line-clamp-2">
-            {restaurant.address || `${restaurant.latitude.toFixed(4)}, ${restaurant.longitude.toFixed(4)}`}
+            {restaurant.address ||
+              `${restaurant.latitude.toFixed(4)}, ${restaurant.longitude.toFixed(4)}`}
           </span>
         </div>
       </div>
@@ -72,7 +81,7 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) =>
         <div className="flex items-center gap-1.5 font-medium">
           <span className="px-2 py-0.5 bg-gray-100 rounded text-[11px] text-gray-600">
             {restaurant.reviewCount === 1
-              ? '1 Review'
+              ? "1 Review"
               : `${restaurant.reviewCount || 0} Reviews`}
           </span>
         </div>
